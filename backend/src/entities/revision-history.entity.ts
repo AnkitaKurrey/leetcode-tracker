@@ -5,6 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { Problem } from './problem.entity';
 
@@ -18,15 +19,17 @@ export class RevisionHistory {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Problem, (problem) => problem.id)
+  @ManyToOne(() => Problem, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'problem_id' })
   problem: Problem;
 
+  @Index()
   @Column({ type: 'int' })
   problem_id: number;
 
+  /** YYYY-MM-DD */
   @Column({ type: 'date' })
-  revised_date: Date;
+  revised_date: string;
 
   @Column({
     type: 'enum',
@@ -35,7 +38,7 @@ export class RevisionHistory {
   status: RevisionStatus;
 
   @Column({ type: 'text', nullable: true })
-  notes: string;
+  notes: string | null;
 
   @CreateDateColumn()
   created_at: Date;

@@ -1,130 +1,173 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useProblems } from '../hooks/useProblems';
-import { Difficulty, ProblemStatus as PS } from '../services/api';
-import ProblemCard from './ProblemCard';
+import type { ProblemFilters } from '../hooks/useProblems';
+import { Difficulty, ProblemStatus as PS, getApiErrorMessage } from '../services/api';
+import ProblemTable from './ProblemTable';
 import ProblemForm from './ProblemForm';
+import { PageHeader } from './ui/PageHeader';
+import { Button } from './ui/Button';
+import { Banner } from './ui/Banner';
+import { EmptyState } from './ui/EmptyState';
+import { IconPlus, IconSearch } from './ui/icons';
 
 export default function ProblemList() {
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [difficultyFilter, setDifficultyFilter] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [solvedFilter, setSolvedFilter] = useState<string>('');
+  const [params, setParams] = useSearchParams();
+  const [showAdd, setShowAdd] = useState(params.get('new') === '1');
+  const [search, setSearch] = useState(params.get('q') ?? '');
 
-  const filters: any = {};
-  if (difficultyFilter) filters.difficulty = difficultyFilter;
-  if (statusFilter) filters.status = statusFilter;
-  if (solvedFilter !== '') {
-    filters.is_solved = solvedFilter === 'true';
-  }
+  const difficulty = params.get('difficulty') ?? '';
+  const status = params.get('status') ?? '';
+  const solved = params.get('solved') ?? '';
+
+  const setParam = (key: string, value: string) => {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    next.delete('new');
+    setParams(next, { replace: true });
+  };
+
+  // Debounce the search box into the URL so it is shareable and survives reloads.
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      if ((params.get('q') ?? '') !== search) setParam('q', search);
+    }, 250);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  const filters: ProblemFilters = {};
+  if (difficulty) filters.difficulty = difficulty;
+  if (status) filters.status = status;
+  if (solved) filters.is_solved = solved === 'true';
 
   const { data: problems, isLoading, error } = useProblems(filters);
 
-  const filteredProblems = problems?.filter((problem) => {
-    if (statusFilter && problem.status !== statusFilter) return false;
-    return true;
-  });
+  const visible = useMemo(() => {
+    if (!problems) return problems;
+    const q = search.trim().toLowerCase();
+    if (!q) return problems;
+    return problems.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.topics?.some((t) => t.toLowerCase().includes(q)) ||
+        p.companies?.some((c) => c.toLowerCase().includes(q)),
+    );
+  }, [problems, search]);
+
+  const hasFilters = Boolean(difficulty || status || solved || search);
+
+  // Nudge once: solved problems exist but none has a revision schedule yet.
+  const unscheduledSolved = problems?.filter((p) => p.is_solved && !p.revision_interval_days) ?? [];
+  const showScheduleHint =
+    !hasFilters &&
+    unscheduledSolved.length > 0 &&
+    !problems?.some((p) => p.revision_interval_days);
+  const clearFilters = () => {
+    setSearch('');
+    setParams(new URLSearchParams(), { replace: true });
+  };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">All Problems</h1>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          + Add Problem
-        </button>
+    <>
+      <PageHeader
+        title="Problems"
+        description={
+          problems
+            ? `${visible?.length ?? 0}${hasFilters ? ` of ${problems.length}` : ''} problem${problems.length === 1 ? '' : 's'}`
+            : undefined
+        }
+        actions={
+          <Button variant="primary" onClick={() => setShowAdd(true)}>
+            <IconPlus size={14} />
+            Add problem
+          </Button>
+        }
+      />
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative w-full sm:w-64">
+          <IconSearch size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <input
+            type="search"
+            aria-label="Search problems"
+            placeholder="Search title, topic, company"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="control pl-8"
+          />
+        </div>
+        <select aria-label="Difficulty" value={difficulty} onChange={(e) => setParam('difficulty', e.target.value)} className="control w-auto">
+          <option value="">Any difficulty</option>
+          <option value={Difficulty.EASY}>Easy</option>
+          <option value={Difficulty.MEDIUM}>Medium</option>
+          <option value={Difficulty.HARD}>Hard</option>
+        </select>
+        <select aria-label="Solved" value={solved} onChange={(e) => setParam('solved', e.target.value)} className="control w-auto">
+          <option value="">Solved or not</option>
+          <option value="true">Solved</option>
+          <option value="false">Unsolved</option>
+        </select>
+        <select aria-label="Status" value={status} onChange={(e) => setParam('status', e.target.value)} className="control w-auto">
+          <option value="">Any status</option>
+          <option value={PS.SOLVED}>Solved</option>
+          <option value={PS.REVISED}>Revised</option>
+          <option value={PS.DUE}>Due today</option>
+          <option value={PS.OVERDUE}>Overdue</option>
+        </select>
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            Clear
+          </Button>
+        )}
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Difficulty
-            </label>
-            <select
-              value={difficultyFilter}
-              onChange={(e) => setDifficultyFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All</option>
-              <option value={Difficulty.EASY}>Easy</option>
-              <option value={Difficulty.MEDIUM}>Medium</option>
-              <option value={Difficulty.HARD}>Hard</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All</option>
-              <option value={PS.SOLVED}>Solved</option>
-              <option value={PS.DUE}>Due</option>
-              <option value={PS.OVERDUE}>Overdue</option>
-              <option value={PS.REVISED}>Revised</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Solved Status
-            </label>
-            <select
-              value={solvedFilter}
-              onChange={(e) => setSolvedFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All</option>
-              <option value="true">Solved</option>
-              <option value="false">Not Solved</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        </div>
+      {showScheduleHint && (
+        <Banner tone="info">
+          <span className="font-medium">Next step:</span> set a revision interval on a
+          solved problem so it shows up on the Due page when it is time to revisit it.
+          Use <span className="font-medium">Set schedule</span> on the row.
+        </Banner>
       )}
 
-      {/* Error State */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          Error loading problems. Please try again.
-        </div>
+      {error ? (
+        <Banner tone="error">{getApiErrorMessage(error)}</Banner>
+      ) : (
+        <ProblemTable
+          problems={visible}
+          loading={isLoading}
+          empty={
+            hasFilters ? (
+              <EmptyState
+                title="No matching problems"
+                description="Try a different search or clear the filters."
+                action={<Button onClick={clearFilters}>Clear filters</Button>}
+              />
+            ) : (
+              <EmptyState
+                title="No problems yet"
+                description="Add the first problem you want to track and revise."
+                action={
+                  <Button variant="primary" onClick={() => setShowAdd(true)}>
+                    <IconPlus size={14} />
+                    Add problem
+                  </Button>
+                }
+              />
+            )
+          }
+        />
       )}
 
-      {/* Problems List */}
-      {!isLoading && !error && (
-        <>
-          {filteredProblems && filteredProblems.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6">
-              {filteredProblems.map((problem) => (
-                <ProblemCard key={problem.id} problem={problem} />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow p-12 text-center">
-              <p className="text-gray-500 text-lg">
-                No problems found. Add your first problem to get started!
-              </p>
-            </div>
-          )}
-        </>
+      {showAdd && (
+        <ProblemForm
+          onClose={() => {
+            setShowAdd(false);
+            if (params.get('new')) setParam('new', '');
+          }}
+        />
       )}
-
-      {showAddModal && (
-        <ProblemForm onClose={() => setShowAddModal(false)} />
-      )}
-    </div>
+    </>
   );
 }

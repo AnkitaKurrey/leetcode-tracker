@@ -8,11 +8,14 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ProblemsService } from './problems.service';
 import { CreateProblemDto } from './dto/create-problem.dto';
 import { UpdateProblemDto } from './dto/update-problem.dto';
 import { SetRevisionDto } from './dto/set-revision.dto';
+import { QueryProblemsDto } from './dto/query-problems.dto';
 
 @Controller('problems')
 export class ProblemsController {
@@ -24,23 +27,18 @@ export class ProblemsController {
   }
 
   @Get()
-  findAll(
-    @Query('difficulty') difficulty?: string,
-    @Query('status') status?: string,
-    @Query('is_solved') is_solved?: string,
-  ) {
-    const filters: any = {};
-    if (difficulty) filters.difficulty = difficulty;
-    if (status) filters.status = status;
-    if (is_solved !== undefined) {
-      filters.is_solved = is_solved === 'true';
-    }
-    return this.problemsService.findAll(filters);
+  findAll(@Query() query: QueryProblemsDto) {
+    return this.problemsService.findAll(query);
   }
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.problemsService.findOne(id);
+  }
+
+  @Get(':id/history')
+  getHistory(@Param('id', ParseIntPipe) id: number) {
+    return this.problemsService.getHistory(id);
   }
 
   @Patch(':id')
@@ -52,6 +50,7 @@ export class ProblemsController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.problemsService.remove(id);
   }

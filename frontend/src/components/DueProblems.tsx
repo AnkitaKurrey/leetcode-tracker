@@ -1,74 +1,70 @@
+import { Link } from 'react-router-dom';
 import { useDueProblems, useOverdueProblems } from '../hooks/useProblems';
-import ProblemCard from './ProblemCard';
+import { getApiErrorMessage } from '../services/api';
+import ProblemTable from './ProblemTable';
+import { PageHeader } from './ui/PageHeader';
+import { Banner } from './ui/Banner';
+import { EmptyState } from './ui/EmptyState';
 
 export default function DueProblems() {
-  const {
-    data: dueProblems,
-    isLoading: dueLoading,
-    error: dueError,
-  } = useDueProblems();
-  const {
-    data: overdueProblems,
-    isLoading: overdueLoading,
-    error: overdueError,
-  } = useOverdueProblems();
+  const due = useDueProblems();
+  const overdue = useOverdueProblems();
+  const isLoading = due.isLoading || overdue.isLoading;
+  const error = due.error ?? overdue.error;
 
-  const isLoading = dueLoading || overdueLoading;
-  const error = dueError || overdueError;
+  const total = (due.data?.length ?? 0) + (overdue.data?.length ?? 0);
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Due Problems</h1>
+    <>
+      <PageHeader
+        title="Due for revision"
+        description={
+          isLoading
+            ? undefined
+            : total === 0
+              ? 'You are all caught up.'
+              : `${total} problem${total === 1 ? '' : 's'} to revise. Overdue first.`
+        }
+      />
 
-      {isLoading && (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      {error && <Banner tone="error">{getApiErrorMessage(error)}</Banner>}
+
+      {!isLoading && !error && total === 0 ? (
+        <EmptyState
+          title="Nothing due today"
+          description="Solved problems with a revision schedule appear here when their date arrives. Set a schedule from the Problems page."
+          action={
+            <Link to="/problems?solved=true" className="text-sm font-medium text-zinc-700 hover:underline">
+              Go to problems
+            </Link>
+          }
+        />
+      ) : (
+        <div className="space-y-8">
+          {(isLoading || (overdue.data && overdue.data.length > 0)) && (
+            <section>
+              <h2 className="mb-3 text-sm font-semibold text-zinc-900">
+                Overdue
+                {overdue.data && (
+                  <span className="ml-2 font-normal text-zinc-500 tabular-nums">{overdue.data.length}</span>
+                )}
+              </h2>
+              <ProblemTable problems={overdue.data} loading={overdue.isLoading} compact empty={null} />
+            </section>
+          )}
+          {(isLoading || (due.data && due.data.length > 0)) && (
+            <section>
+              <h2 className="mb-3 text-sm font-semibold text-zinc-900">
+                Due today
+                {due.data && (
+                  <span className="ml-2 font-normal text-zinc-500 tabular-nums">{due.data.length}</span>
+                )}
+              </h2>
+              <ProblemTable problems={due.data} loading={due.isLoading} compact empty={null} />
+            </section>
+          )}
         </div>
       )}
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-          Error loading problems. Please try again.
-        </div>
-      )}
-
-      {/* Overdue Section */}
-      {overdueProblems && overdueProblems.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-red-600 mb-4">
-            Overdue ({overdueProblems.length})
-          </h2>
-          <div className="grid grid-cols-1 gap-6">
-            {overdueProblems.map((problem) => (
-              <ProblemCard key={problem.id} problem={problem} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Due Today Section */}
-      {dueProblems && dueProblems.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-semibold text-yellow-600 mb-4">
-            Due Today ({dueProblems.length})
-          </h2>
-          <div className="grid grid-cols-1 gap-6">
-            {dueProblems.map((problem) => (
-              <ProblemCard key={problem.id} problem={problem} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {!isLoading &&
-        (!overdueProblems || overdueProblems.length === 0) &&
-        (!dueProblems || dueProblems.length === 0) && (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <p className="text-gray-500 text-lg">
-              No problems due or overdue. Great job! 🎉
-            </p>
-          </div>
-        )}
-    </div>
+    </>
   );
 }

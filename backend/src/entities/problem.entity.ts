@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 export enum Difficulty {
@@ -20,38 +21,46 @@ export class Problem {
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
-  @Column({ type: 'varchar', length: 500, unique: true })
-  leetcode_url: string;
+  /** Unique when present; many problems may have no URL. */
+  @Column({ type: 'varchar', length: 500, unique: true, nullable: true })
+  leetcode_url: string | null;
 
+  @Index()
   @Column({
     type: 'enum',
     enum: Difficulty,
+    nullable: true,
   })
-  difficulty: Difficulty;
+  difficulty: Difficulty | null;
 
   @Column({ type: 'json', nullable: true })
-  topics: string[];
+  topics: string[] | null;
 
   @Column({ type: 'json', nullable: true })
-  companies: string[];
+  companies: string[] | null;
 
   @Column({ type: 'text', nullable: true })
-  notes: string;
+  notes: string | null;
 
+  @Index()
   @Column({ type: 'boolean', default: false })
   is_solved: boolean;
 
+  /** YYYY-MM-DD */
   @Column({ type: 'date', nullable: true })
-  solved_date: Date | null;
+  solved_date: string | null;
 
   @Column({ type: 'int', nullable: true })
-  revision_interval_days: number;
+  revision_interval_days: number | null;
 
+  /** YYYY-MM-DD */
+  @Index()
   @Column({ type: 'date', nullable: true })
-  next_revision_date: Date | null;
+  next_revision_date: string | null;
 
+  /** YYYY-MM-DD */
   @Column({ type: 'date', nullable: true })
-  last_revised_date: Date | null;
+  last_revised_date: string | null;
 
   @Column({ type: 'int', default: 0 })
   revision_count: number;

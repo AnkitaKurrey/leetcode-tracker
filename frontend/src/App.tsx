@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import ProblemList from './components/ProblemList';
@@ -14,6 +14,7 @@ function App() {
           <Route path="/problems" element={<ProblemList />} />
           <Route path="/due" element={<DueProblems />} />
           <Route path="/progress" element={<ProgressChart />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
     </BrowserRouter>

@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Problem } from '../entities/problem.entity';
+import { LessThan, Repository } from 'typeorm';
+import { Difficulty, Problem } from '../entities/problem.entity';
+import { addDays, today } from '../common/date.util';
 
 export enum ProblemStatus {
   SOLVED = 'SOLVED',
@@ -10,6 +11,8 @@ export enum ProblemStatus {
   REVISED = 'REVISED',
 }
 
+export type ProblemWithStatus = Problem & { status: ProblemStatus | null };
+
 @Injectable()
 export class RevisionsService {
   constructor(
@@ -17,89 +20,70 @@ export class RevisionsService {
     private readonly problemRepository: Repository<Problem>,
   ) {}
 
-  calculateStatus(problem: Problem): ProblemStatus | null {
+  /**
+   * Status rules (see README "Status Calculation"):
+   *  - null     : not solved yet
+   *  - SOLVED   : solved, no revision scheduled OR scheduled in the future and never revised
+   *  - DUE      : next revision date is today
+   *  - OVERDUE  : next revision date has passed
+   *  - REVISED  : revised, and the next revision date is in the future
+   */
+  calculateStatus(problem: Problem, todayStr = today()): ProblemStatus | null {
     if (!problem.is_solved) return null;
     if (!problem.next_revision_date) return ProblemStatus.SOLVED;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const next = problem.next_revision_date;
+    if (next === todayStr) return ProblemStatus.DUE;
+    if (next < todayStr) return ProblemStatus.OVERDUE;
 
-    const revisionDate = new Date(problem.next_revision_date);
-    revisionDate.setHours(0, 0, 0, 0);
-
-    if (problem.last_revised_date) {
-      const lastRevised = new Date(problem.last_revised_date);
-      lastRevised.setHours(0, 0, 0, 0);
-      if (lastRevised >= revisionDate) {
-        return ProblemStatus.REVISED;
-      }
-    }
-
-    if (revisionDate.getTime() === today.getTime()) {
-      return ProblemStatus.DUE;
-    }
-
-    if (revisionDate < today) {
-      return ProblemStatus.OVERDUE;
-    }
-
-    return ProblemStatus.SOLVED;
+    return problem.last_revised_date
+      ? ProblemStatus.REVISED
+      : ProblemStatus.SOLVED;
   }
 
-  updateNextRevisionDate(problem: Problem, intervalDays: number): Date {
-    const baseDate = problem.last_revised_date
-      ? new Date(problem.last_revised_date)
-      : problem.solved_date
-        ? new Date(problem.solved_date)
-        : new Date();
-
-    const nextDate = new Date(baseDate);
-    nextDate.setDate(nextDate.getDate() + intervalDays);
-    return nextDate;
+  withStatus(problem: Problem): ProblemWithStatus {
+    return { ...problem, status: this.calculateStatus(problem) };
   }
 
-  async getDueProblems(): Promise<Problem[]> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  /**
+   * Compute the next revision date.
+   * Base date = last revision, else solved date, else today. The result is never
+   * in the past: if the computed date has already passed, count from today so a
+   * freshly-set schedule does not start out OVERDUE.
+   */
+  computeNextRevisionDate(
+    problem: Pick<Problem, 'last_revised_date' | 'solved_date'>,
+    intervalDays: number,
+    todayStr = today(),
+  ): string {
+    const base = problem.last_revised_date ?? problem.solved_date ?? todayStr;
+    const next = addDays(base, intervalDays);
+    return next < todayStr ? addDays(todayStr, intervalDays) : next;
+  }
 
+  async getDueProblems(): Promise<ProblemWithStatus[]> {
     const problems = await this.problemRepository.find({
-      where: {
-        is_solved: true,
-      },
+      where: { is_solved: true, next_revision_date: today() },
+      order: { next_revision_date: 'ASC', title: 'ASC' },
     });
-
-    return problems.filter((problem) => {
-      if (!problem.next_revision_date) return false;
-      const revisionDate = new Date(problem.next_revision_date);
-      revisionDate.setHours(0, 0, 0, 0);
-      return revisionDate.getTime() === today.getTime();
-    });
+    return problems.map((p) => this.withStatus(p));
   }
 
-  async getOverdueProblems(): Promise<Problem[]> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
+  async getOverdueProblems(): Promise<ProblemWithStatus[]> {
     const problems = await this.problemRepository.find({
-      where: {
-        is_solved: true,
-      },
+      where: { is_solved: true, next_revision_date: LessThan(today()) },
+      order: { next_revision_date: 'ASC', title: 'ASC' },
     });
-
-    return problems.filter((problem) => {
-      if (!problem.next_revision_date) return false;
-      const revisionDate = new Date(problem.next_revision_date);
-      revisionDate.setHours(0, 0, 0, 0);
-      return revisionDate < today;
-    });
+    return problems.map((p) => this.withStatus(p));
   }
 
   async getDashboardSummary() {
-    const allProblems = await this.problemRepository.find();
+    const [allProblems, dueProblems, overdueProblems] = await Promise.all([
+      this.problemRepository.find(),
+      this.getDueProblems(),
+      this.getOverdueProblems(),
+    ]);
     const solvedProblems = allProblems.filter((p) => p.is_solved);
-
-    const dueProblems = await this.getDueProblems();
-    const overdueProblems = await this.getOverdueProblems();
 
     const stats = {
       total: allProblems.length,
@@ -107,16 +91,15 @@ export class RevisionsService {
       due: dueProblems.length,
       overdue: overdueProblems.length,
       byDifficulty: {
-        EASY: solvedProblems.filter((p) => p.difficulty === 'EASY').length,
-        MEDIUM: solvedProblems.filter((p) => p.difficulty === 'MEDIUM').length,
-        HARD: solvedProblems.filter((p) => p.difficulty === 'HARD').length,
+        EASY: solvedProblems.filter((p) => p.difficulty === Difficulty.EASY)
+          .length,
+        MEDIUM: solvedProblems.filter((p) => p.difficulty === Difficulty.MEDIUM)
+          .length,
+        HARD: solvedProblems.filter((p) => p.difficulty === Difficulty.HARD)
+          .length,
       },
     };
 
-    return {
-      stats,
-      dueProblems,
-      overdueProblems,
-    };
+    return { stats, dueProblems, overdueProblems };
   }
 }

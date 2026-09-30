@@ -9,11 +9,13 @@ import type {
   DashboardSummary,
 } from '../services/api';
 
-export const useProblems = (filters?: {
+export interface ProblemFilters {
   difficulty?: string;
   status?: string;
   is_solved?: boolean;
-}) => {
+}
+
+export const useProblems = (filters?: ProblemFilters) => {
   return useQuery({
     queryKey: ['problems', filters],
     queryFn: () => problemsApi.getAll(filters),
@@ -35,6 +37,7 @@ export const useCreateProblem = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['problems'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['revisions'] });
     },
   });
 };
@@ -48,6 +51,7 @@ export const useUpdateProblem = () => {
       queryClient.invalidateQueries({ queryKey: ['problems'] });
       queryClient.invalidateQueries({ queryKey: ['problems', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['revisions'] });
     },
   });
 };
@@ -59,6 +63,7 @@ export const useDeleteProblem = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['problems'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['revisions'] });
     },
   });
 };
@@ -70,6 +75,7 @@ export const useMarkAsSolved = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['problems'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['revisions'] });
     },
   });
 };
@@ -82,6 +88,7 @@ export const useSetRevisionSchedule = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['problems'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['revisions'] });
     },
   });
 };
@@ -93,6 +100,7 @@ export const useMarkAsRevised = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['problems'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['revisions'] });
     },
   });
 };

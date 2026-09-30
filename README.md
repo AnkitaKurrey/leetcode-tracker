@@ -9,7 +9,8 @@ A full-stack web application to track LeetCode problems, schedule revisions, and
 - **Status Tracking**: Automatic status calculation (SOLVED, DUE, OVERDUE, REVISED)
 - **Dashboard**: Overview of due/overdue problems and statistics
 - **Progress Analytics**: Track progress by difficulty and revision consistency
-- **Automated Reminders**: Daily cron job updates problem statuses
+- **Revision History**: Every revision is recorded in `revision_history`
+- **Daily Reminder Job**: A midnight cron job logs a summary of due/overdue problems
 
 ## Tech Stack
 
@@ -20,12 +21,23 @@ A full-stack web application to track LeetCode problems, schedule revisions, and
 - NestJS Scheduler (Cron jobs)
 
 ### Frontend
-- React 18
+- React 19
 - TypeScript
 - Vite
 - Tailwind CSS
 - React Query (TanStack Query)
 - React Router
+
+## Quick Start
+
+```bash
+npm run setup   # installs root, backend and frontend dependencies (once)
+npm run dev     # runs the API and the web app together, both with auto-reload
+```
+
+Then open http://localhost:5173. The backend restarts itself when a file in
+`backend/src` changes, and the frontend hot-reloads in the browser. You only
+need `.env` files in place (see below) and MySQL running.
 
 ## Setup Instructions
 
@@ -50,7 +62,7 @@ cd backend
 npm install
 ```
 
-3. Create a `.env` file in the backend directory:
+3. Create a `.env` file in the backend directory (copy `.env.example`):
 ```env
 DB_HOST=localhost
 DB_PORT=3306
@@ -86,7 +98,7 @@ cd frontend
 npm install
 ```
 
-3. Create a `.env` file in the frontend directory (optional):
+3. Create a `.env` file in the frontend directory (optional, see `.env.example`):
 ```env
 VITE_API_URL=http://localhost:3000
 ```
@@ -110,10 +122,11 @@ The frontend will run on `http://localhost:5173`
 ## API Endpoints
 
 ### Problems
-- `GET /problems` - Get all problems (with optional filters)
+- `GET /problems` - Get all problems (filters: `difficulty`, `status`, `is_solved`)
 - `GET /problems/:id` - Get a single problem
-- `POST /problems` - Create a new problem
-- `PATCH /problems/:id` - Update a problem
+- `GET /problems/:id/history` - Get the revision history of a problem
+- `POST /problems` - Create a new problem (all fields optional; a `title` or a `leetcode_url` is required, and the title is derived from the URL slug when omitted)
+- `PATCH /problems/:id` - Update a problem (send `next_revision_date: null` to recalculate it from the interval; setting `is_solved: false` clears the schedule)
 - `DELETE /problems/:id` - Delete a problem
 - `POST /problems/:id/solve` - Mark problem as solved
 - `POST /problems/:id/revision` - Set revision schedule
@@ -126,17 +139,22 @@ The frontend will run on `http://localhost:5173`
 
 ## Database Schema
 
-The application uses two main tables:
+The application uses two tables:
 - `problems`: Stores problem information and revision schedules
-- `revision_history`: (Optional) Tracks revision history
+- `revision_history`: One row per revision (deleted together with its problem)
+
+All date-only fields (`solved_date`, `next_revision_date`, `last_revised_date`, `revised_date`) are `YYYY-MM-DD` strings.
 
 ## Status Calculation
 
-Problem status is automatically calculated based on:
-- `SOLVED`: Problem is solved but revision not yet due
-- `DUE`: Revision date is today
-- `OVERDUE`: Revision date has passed
-- `REVISED`: Problem was revised on or before due date
+Problem status is calculated on every read (it is not stored):
+- `null`: Problem is not solved yet
+- `SOLVED`: Solved, and either no revision is scheduled or the next revision is in the future and it has never been revised
+- `DUE`: Next revision date is today
+- `OVERDUE`: Next revision date has passed
+- `REVISED`: Revised at least once, and the next revision is in the future
+
+When a schedule is set, the next revision date counts from the last revision (or the solved date). If that would already be in the past, it counts from today instead so a new schedule never starts out overdue.
 
 ## License
 

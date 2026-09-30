@@ -38,44 +38,69 @@ export type ProblemStatus = typeof ProblemStatus[keyof typeof ProblemStatus];
 export interface Problem {
   id: number;
   title: string;
-  leetcode_url: string;
-  difficulty: Difficulty;
-  topics: string[];
-  companies: string[];
-  notes?: string;
+  leetcode_url: string | null;
+  difficulty: Difficulty | null;
+  topics: string[] | null;
+  companies: string[] | null;
+  notes: string | null;
   is_solved: boolean;
-  solved_date?: string;
-  revision_interval_days?: number;
-  next_revision_date?: string;
-  last_revised_date?: string;
+  /** YYYY-MM-DD */
+  solved_date: string | null;
+  revision_interval_days: number | null;
+  /** YYYY-MM-DD */
+  next_revision_date: string | null;
+  /** YYYY-MM-DD */
+  last_revised_date: string | null;
   revision_count: number;
   created_at: string;
   updated_at: string;
-  status?: ProblemStatus | null;
+  status: ProblemStatus | null;
 }
 
 export interface CreateProblemDto {
-  title: string;
-  leetcode_url: string;
-  difficulty: Difficulty;
+  /** A title or a LeetCode URL is required; the title is derived from the URL if omitted. */
+  title?: string | null;
+  leetcode_url?: string | null;
+  difficulty?: Difficulty | null;
   topics?: string[];
   companies?: string[];
   notes?: string;
   is_solved?: boolean;
-  solved_date?: string;
+  /** YYYY-MM-DD */
+  solved_date?: string | null;
+  revision_interval_days?: number | null;
+  /** YYYY-MM-DD. Send null to auto-calculate from revision_interval_days. */
+  next_revision_date?: string | null;
 }
 
-export interface UpdateProblemDto {
-  title?: string;
-  leetcode_url?: string;
-  difficulty?: Difficulty;
-  topics?: string[];
-  companies?: string[];
-  notes?: string;
-  is_solved?: boolean;
-  solved_date?: string;
-  revision_interval_days?: number;
-  next_revision_date?: string;
+export type UpdateProblemDto = Partial<CreateProblemDto>;
+
+export interface RevisionHistoryEntry {
+  id: number;
+  problem_id: number;
+  revised_date: string;
+  status: 'REVISED' | 'SKIPPED';
+  notes: string | null;
+  created_at: string;
+}
+
+/** Extract a human-readable message from an API error. */
+export function getApiErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as
+      | { message?: string | string[] }
+      | undefined;
+    if (data?.message) {
+      return Array.isArray(data.message)
+        ? data.message.join('. ')
+        : data.message;
+    }
+    if (!error.response) {
+      return 'Cannot reach the backend. Is the server running?';
+    }
+    return error.message;
+  }
+  return error instanceof Error ? error.message : 'Unexpected error';
 }
 
 export interface DashboardSummary {
@@ -111,6 +136,13 @@ export const problemsApi = {
 
   getOne: async (id: number): Promise<Problem> => {
     const response = await api.get<Problem>(`/problems/${id}`);
+    return response.data;
+  },
+
+  getHistory: async (id: number): Promise<RevisionHistoryEntry[]> => {
+    const response = await api.get<RevisionHistoryEntry[]>(
+      `/problems/${id}/history`,
+    );
     return response.data;
   },
 
