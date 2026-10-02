@@ -69,8 +69,15 @@ export class ProblemsService {
 
     if (problem.is_solved) {
       problem.solved_date = toDateOnly(dto.solved_date) ?? today();
-      problem.revision_interval_days = dto.revision_interval_days ?? null;
-      this.reconcileSchedule(problem, toDateOnly(dto.next_revision_date));
+      if (
+        dto.revision_interval_days == null &&
+        dto.next_revision_date == null
+      ) {
+        this.startLadder(problem);
+      } else {
+        problem.revision_interval_days = dto.revision_interval_days ?? null;
+        this.reconcileSchedule(problem, toDateOnly(dto.next_revision_date));
+      }
     }
 
     const saved = await this.saveHandlingDuplicates(problem);
@@ -126,6 +133,7 @@ export class ProblemsService {
     if (dto.companies !== undefined)
       problem.companies = this.cleanList(dto.companies);
     if (dto.notes !== undefined) problem.notes = dto.notes.trim() || null;
+    const justSolved = dto.is_solved === true && !problem.is_solved;
     if (dto.is_solved !== undefined) problem.is_solved = dto.is_solved;
 
     if (!problem.is_solved) {
@@ -139,6 +147,17 @@ export class ProblemsService {
         problem.solved_date = toDateOnly(dto.solved_date);
       }
       problem.solved_date ??= today();
+
+      if (
+        justSolved &&
+        dto.revision_interval_days == null &&
+        dto.next_revision_date == null
+      ) {
+        // Solving from the edit form with no schedule given: start the ladder.
+        this.startLadder(problem);
+        const saved = await this.saveHandlingDuplicates(problem);
+        return this.revisionsService.withStatus(saved);
+      }
 
       const intervalChanged =
         dto.revision_interval_days !== undefined &&
@@ -180,7 +199,13 @@ export class ProblemsService {
     if (!problem.is_solved) {
       problem.is_solved = true;
       problem.solved_date = toDateOnly(solvedDate) ?? today();
-      this.reconcileSchedule(problem, problem.next_revision_date);
+      // Solving puts the problem on the ladder straight away (first revision in
+      // a week, on a weekend) unless a date was already set on it.
+      if (problem.next_revision_date) {
+        this.reconcileSchedule(problem, problem.next_revision_date);
+      } else {
+        this.startLadder(problem);
+      }
     }
 
     const saved = await this.problemRepository.save(problem);
@@ -265,6 +290,14 @@ export class ProblemsService {
    * - interval set but no date -> compute it
    * - no interval -> no scheduled revision
    */
+  /** First rung of the ladder, counted from the solve date, on a weekend. */
+  private startLadder(problem: Problem) {
+    const { intervalDays, nextRevisionDate } =
+      this.revisionsService.initialSchedule(problem);
+    problem.revision_interval_days = intervalDays;
+    problem.next_revision_date = nextRevisionDate;
+  }
+
   private reconcileSchedule(problem: Problem, explicitNext: string | null) {
     if (explicitNext) {
       problem.next_revision_date = explicitNext;

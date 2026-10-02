@@ -189,4 +189,21 @@ describe('RevisionsService', () => {
       ); // Tue+7 = Tue -> Sat
     });
   });
+
+  describe('initialSchedule', () => {
+    it('puts a freshly solved problem on the first rung, on a weekend', () => {
+      const p = problem({ solved_date: '2026-10-06', last_revised_date: null }); // Tue
+      expect(service.initialSchedule(p, '2026-10-06')).toEqual({
+        intervalDays: 7,
+        nextRevisionDate: '2026-10-17', // Tue + 7 = Tue -> Sat
+      });
+    });
+
+    it('never schedules in the past for an old solve date', () => {
+      const p = problem({ solved_date: '2026-01-01', last_revised_date: null });
+      expect(service.initialSchedule(p, '2026-10-06').nextRevisionDate).toBe(
+        '2026-10-17',
+      );
+    });
+  });
 });

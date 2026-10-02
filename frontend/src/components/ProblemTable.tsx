@@ -142,7 +142,12 @@ function ProblemRow({
 
   const onSolve = () =>
     markSolved.mutate(problem.id, {
-      onSuccess: () => toast.push('Marked as solved'),
+      onSuccess: (p) =>
+        toast.push(
+          p.next_revision_date
+            ? `Solved. First revision ${formatRelativeDay(p.next_revision_date)}`
+            : 'Marked as solved',
+        ),
       onError: fail,
     });
   const onRevise = (result: ReviseResult = 'ok') =>

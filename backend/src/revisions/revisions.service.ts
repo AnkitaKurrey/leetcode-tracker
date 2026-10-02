@@ -82,6 +82,25 @@ export class RevisionsService {
     return ladder[Math.min(next, ladder.length - 1)];
   }
 
+  /**
+   * Schedule for a problem that has just been solved: the first rung of the
+   * ladder, counted from the solve date, on a weekend.
+   */
+  initialSchedule(
+    problem: Pick<Problem, 'last_revised_date' | 'solved_date'>,
+    todayStr = today(),
+  ): { intervalDays: number; nextRevisionDate: string } {
+    const intervalDays = RevisionsService.LADDER[0];
+    return {
+      intervalDays,
+      nextRevisionDate: this.scheduleAfterRevision(
+        problem,
+        intervalDays,
+        todayStr,
+      ),
+    };
+  }
+
   /** Next revision date after a revision today: interval from today, on a weekend. */
   scheduleAfterRevision(
     problem: Pick<Problem, 'last_revised_date' | 'solved_date'>,
