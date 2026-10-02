@@ -52,3 +52,16 @@ export function addDays(dateOnly: string, days: number): string {
 export function maxDate(a: string, b: string): string {
   return a >= b ? a : b;
 }
+
+/**
+ * Move a YYYY-MM-DD date forward to the next Saturday unless it already falls
+ * on a Saturday or Sunday. Revisions happen on weekends only.
+ */
+export function snapToWeekend(dateOnly: string): string {
+  const m = DATE_ONLY.exec(dateOnly);
+  if (!m) throw new Error(`Invalid date-only value: ${dateOnly}`);
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const day = d.getDay(); // 0 = Sunday, 6 = Saturday
+  if (day === 0 || day === 6) return dateOnly;
+  return addDays(dateOnly, 6 - day);
+}

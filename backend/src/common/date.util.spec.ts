@@ -1,4 +1,10 @@
-import { addDays, formatDateOnly, toDateOnly, maxDate } from './date.util';
+import {
+  addDays,
+  formatDateOnly,
+  toDateOnly,
+  maxDate,
+  snapToWeekend,
+} from './date.util';
 
 describe('date.util', () => {
   it('formats a Date using local components', () => {
@@ -31,5 +37,17 @@ describe('date.util', () => {
   it('picks the later date', () => {
     expect(maxDate('2026-01-01', '2026-01-02')).toBe('2026-01-02');
     expect(maxDate('2026-01-02', '2026-01-01')).toBe('2026-01-02');
+  });
+
+  describe('snapToWeekend', () => {
+    it('keeps Saturdays and Sundays', () => {
+      expect(snapToWeekend('2026-10-03')).toBe('2026-10-03'); // Sat
+      expect(snapToWeekend('2026-10-04')).toBe('2026-10-04'); // Sun
+    });
+
+    it('moves weekdays forward to the coming Saturday', () => {
+      expect(snapToWeekend('2026-10-05')).toBe('2026-10-10'); // Mon -> Sat
+      expect(snapToWeekend('2026-10-09')).toBe('2026-10-10'); // Fri -> Sat
+    });
   });
 });

@@ -119,6 +119,9 @@ export interface DashboardSummary {
   overdueProblems: Problem[];
 }
 
+/** How a revision went: 'easy' skips a rung of the schedule, 'hard' restarts it. */
+export type ReviseResult = 'easy' | 'ok' | 'hard';
+
 export const problemsApi = {
   getAll: async (filters?: {
     difficulty?: string;
@@ -175,8 +178,8 @@ export const problemsApi = {
     return response.data;
   },
 
-  markAsRevised: async (id: number): Promise<Problem> => {
-    const response = await api.post<Problem>(`/problems/${id}/revise`);
+  markAsRevised: async (id: number, result: ReviseResult = 'ok'): Promise<Problem> => {
+    const response = await api.post<Problem>(`/problems/${id}/revise`, { result });
     return response.data;
   },
 };

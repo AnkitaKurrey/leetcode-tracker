@@ -1,12 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  problemsApi,
-  revisionsApi,
-} from '../services/api';
+import { problemsApi, revisionsApi } from '../services/api';
 import type {
   CreateProblemDto,
   UpdateProblemDto,
   DashboardSummary,
+  ReviseResult,
 } from '../services/api';
 
 export interface ProblemFilters {
@@ -96,7 +94,8 @@ export const useSetRevisionSchedule = () => {
 export const useMarkAsRevised = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => problemsApi.markAsRevised(id),
+    mutationFn: ({ id, result }: { id: number; result?: ReviseResult }) =>
+      problemsApi.markAsRevised(id, result),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['problems'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });

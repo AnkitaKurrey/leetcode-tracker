@@ -17,6 +17,7 @@ import { QueryProblemsDto } from './dto/query-problems.dto';
 import {
   ProblemWithStatus,
   RevisionsService,
+  ReviseResult,
 } from '../revisions/revisions.service';
 import { toDateOnly, today } from '../common/date.util';
 
@@ -208,7 +209,15 @@ export class ProblemsService {
     return this.revisionsService.withStatus(saved);
   }
 
-  async markAsRevised(id: number): Promise<ProblemWithStatus> {
+  /**
+   * Record a revision and schedule the next one on the spaced-repetition
+   * ladder (7 -> 21 -> 49 -> 91 days), always landing on a weekend.
+   * `result` says how it went: 'easy' skips a rung, 'hard' restarts at 7 days.
+   */
+  async markAsRevised(
+    id: number,
+    result: ReviseResult = 'ok',
+  ): Promise<ProblemWithStatus> {
     const problem = await this.getOrFail(id);
 
     if (!problem.is_solved) {
@@ -218,17 +227,14 @@ export class ProblemsService {
     const revisedOn = today();
     problem.last_revised_date = revisedOn;
     problem.revision_count = (problem.revision_count || 0) + 1;
-
-    if (problem.revision_interval_days) {
-      problem.next_revision_date =
-        this.revisionsService.computeNextRevisionDate(
-          problem,
-          problem.revision_interval_days,
-        );
-    } else {
-      // No interval configured: the revision is recorded but nothing further is scheduled.
-      problem.next_revision_date = null;
-    }
+    problem.revision_interval_days = this.revisionsService.nextIntervalDays(
+      problem.revision_interval_days,
+      result,
+    );
+    problem.next_revision_date = this.revisionsService.scheduleAfterRevision(
+      problem,
+      problem.revision_interval_days,
+    );
 
     const saved = await this.problemRepository.save(problem);
     await this.historyRepository.save(
@@ -236,7 +242,7 @@ export class ProblemsService {
         problem_id: saved.id,
         revised_date: revisedOn,
         status: RevisionStatus.REVISED,
-        notes: null,
+        notes: result,
       }),
     );
 

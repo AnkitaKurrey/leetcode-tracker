@@ -141,4 +141,52 @@ describe('RevisionsService', () => {
       ).toBe('2026-10-13');
     });
   });
+
+  describe('nextIntervalDays (ladder 7 -> 21 -> 49 -> 91)', () => {
+    it('starts at 7 days when nothing was scheduled', () => {
+      expect(service.nextIntervalDays(null)).toBe(7);
+    });
+
+    it('climbs one rung per revision and stays on the last rung', () => {
+      expect(service.nextIntervalDays(7)).toBe(21);
+      expect(service.nextIntervalDays(21)).toBe(49);
+      expect(service.nextIntervalDays(49)).toBe(91);
+      expect(service.nextIntervalDays(91)).toBe(91);
+    });
+
+    it('skips a rung when easy and restarts when hard', () => {
+      expect(service.nextIntervalDays(7, 'easy')).toBe(49);
+      expect(service.nextIntervalDays(null, 'easy')).toBe(21);
+      expect(service.nextIntervalDays(49, 'hard')).toBe(7);
+    });
+
+    it('treats a manual interval between rungs as the rung above it', () => {
+      expect(service.nextIntervalDays(14)).toBe(49);
+    });
+  });
+
+  describe('scheduleAfterRevision', () => {
+    it('counts from the revision day and lands on a weekend', () => {
+      const p = problem({
+        last_revised_date: '2026-10-03',
+        solved_date: '2026-09-20',
+      }); // Sat
+      expect(service.scheduleAfterRevision(p, 7, '2026-10-03')).toBe(
+        '2026-10-10',
+      ); // Sat
+      expect(service.scheduleAfterRevision(p, 21, '2026-10-03')).toBe(
+        '2026-10-24',
+      ); // Sat
+    });
+
+    it('snaps a weekday revision forward to Saturday', () => {
+      const p = problem({
+        last_revised_date: '2026-10-06',
+        solved_date: '2026-09-20',
+      }); // Tue
+      expect(service.scheduleAfterRevision(p, 7, '2026-10-06')).toBe(
+        '2026-10-17',
+      ); // Tue+7 = Tue -> Sat
+    });
+  });
 });

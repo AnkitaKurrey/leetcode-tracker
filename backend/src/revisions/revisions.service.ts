@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, Repository } from 'typeorm';
 import { Difficulty, Problem } from '../entities/problem.entity';
-import { addDays, today } from '../common/date.util';
+import { addDays, snapToWeekend, today } from '../common/date.util';
+
+export type ReviseResult = 'easy' | 'ok' | 'hard';
 
 export enum ProblemStatus {
   SOLVED = 'SOLVED',
@@ -59,6 +61,36 @@ export class RevisionsService {
     const base = problem.last_revised_date ?? problem.solved_date ?? todayStr;
     const next = addDays(base, intervalDays);
     return next < todayStr ? addDays(todayStr, intervalDays) : next;
+  }
+
+  /**
+   * Spaced-repetition ladder, in days. Each successful revision moves a problem
+   * one rung up; "easy" skips a rung, "hard" drops back to the first rung.
+   * The last rung repeats (quarterly maintenance).
+   */
+  static readonly LADDER = [7, 21, 49, 91];
+
+  nextIntervalDays(
+    current: number | null,
+    result: ReviseResult = 'ok',
+  ): number {
+    const ladder = RevisionsService.LADDER;
+    if (result === 'hard') return ladder[0];
+    const idx = current ? ladder.findIndex((d) => d >= current) : -1;
+    const step = result === 'easy' ? 2 : 1;
+    const next = (idx < 0 ? -1 : idx) + step;
+    return ladder[Math.min(next, ladder.length - 1)];
+  }
+
+  /** Next revision date after a revision today: interval from today, on a weekend. */
+  scheduleAfterRevision(
+    problem: Pick<Problem, 'last_revised_date' | 'solved_date'>,
+    intervalDays: number,
+    todayStr = today(),
+  ): string {
+    return snapToWeekend(
+      this.computeNextRevisionDate(problem, intervalDays, todayStr),
+    );
   }
 
   async getDueProblems(): Promise<ProblemWithStatus[]> {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Problem } from '../services/api';
+import type { Problem, ReviseResult } from '../services/api';
 import { getApiErrorMessage } from '../services/api';
 import {
   useDeleteProblem,
@@ -145,16 +145,19 @@ function ProblemRow({
       onSuccess: () => toast.push('Marked as solved'),
       onError: fail,
     });
-  const onRevise = () =>
-    markRevised.mutate(problem.id, {
-      onSuccess: (p) =>
-        toast.push(
-          p.next_revision_date
-            ? `Revised. Next revision ${formatRelativeDay(p.next_revision_date)}`
-            : 'Revised',
-        ),
-      onError: fail,
-    });
+  const onRevise = (result: ReviseResult = 'ok') =>
+    markRevised.mutate(
+      { id: problem.id, result },
+      {
+        onSuccess: (p) =>
+          toast.push(
+            p.next_revision_date
+              ? `Revised. Next revision ${formatRelativeDay(p.next_revision_date)}`
+              : 'Revised',
+          ),
+        onError: fail,
+      },
+    );
   const onDelete = () =>
     remove.mutate(problem.id, {
       onSuccess: () => {
@@ -175,7 +178,7 @@ function ProblemRow({
     );
   } else if (needsRevision) {
     primary = (
-      <Button size="sm" variant="primary" onClick={onRevise} loading={markRevised.isPending}>
+      <Button size="sm" variant="primary" onClick={() => onRevise('ok')} loading={markRevised.isPending}>
         Mark revised
       </Button>
     );
@@ -193,6 +196,16 @@ function ProblemRow({
     <Menu
       items={[
         { label: 'Edit', onSelect: () => setDialog('edit') },
+        {
+          label: 'Revised: easy (skip ahead)',
+          onSelect: () => onRevise('easy'),
+          disabled: !needsRevision,
+        },
+        {
+          label: 'Revised: hard (back to 1 week)',
+          onSelect: () => onRevise('hard'),
+          disabled: !needsRevision,
+        },
         {
           label: problem.revision_interval_days ? 'Change schedule' : 'Set schedule',
           onSelect: () => setDialog('schedule'),

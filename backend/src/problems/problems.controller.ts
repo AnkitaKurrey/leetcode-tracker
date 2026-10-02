@@ -15,6 +15,7 @@ import { ProblemsService } from './problems.service';
 import { CreateProblemDto } from './dto/create-problem.dto';
 import { UpdateProblemDto } from './dto/update-problem.dto';
 import { SetRevisionDto } from './dto/set-revision.dto';
+import { ReviseDto } from './dto/revise.dto';
 import { QueryProblemsDto } from './dto/query-problems.dto';
 
 @Controller('problems')
@@ -72,7 +73,10 @@ export class ProblemsController {
   }
 
   @Post(':id/revise')
-  markAsRevised(@Param('id', ParseIntPipe) id: number) {
-    return this.problemsService.markAsRevised(id);
+  markAsRevised(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() reviseDto: ReviseDto,
+  ) {
+    return this.problemsService.markAsRevised(id, reviseDto.result ?? 'ok');
   }
 }

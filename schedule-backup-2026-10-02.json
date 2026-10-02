@@ -1,0 +1,292 @@
+{
+ "74": {
+  "title": "Root Equals Sum of Children",
+  "revision_interval_days": null,
+  "next_revision_date": null
+ },
+ "73": {
+  "title": "Partition List",
+  "revision_interval_days": null,
+  "next_revision_date": null
+ },
+ "72": {
+  "title": "Rotate List",
+  "revision_interval_days": null,
+  "next_revision_date": null
+ },
+ "71": {
+  "title": "Generate Parentheses",
+  "revision_interval_days": null,
+  "next_revision_date": null
+ },
+ "70": {
+  "title": "Find Minimum in Rotated Sorted Array",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-03"
+ },
+ "69": {
+  "title": "Find First and Last Position of Element in Sorted Array",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-09"
+ },
+ "68": {
+  "title": "Search in Rotated Sorted Array",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-06"
+ },
+ "67": {
+  "title": "Find Peak Element",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-05"
+ },
+ "66": {
+  "title": "Search a 2D Matrix",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-07"
+ },
+ "65": {
+  "title": "Search Insert Position",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-11"
+ },
+ "64": {
+  "title": "Path Sum",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-14"
+ },
+ "63": {
+  "title": "Symmetric Tree",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-01"
+ },
+ "62": {
+  "title": "Invert Binary Tree",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-09-30"
+ },
+ "61": {
+  "title": "Same Tree",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-07"
+ },
+ "60": {
+  "title": "Maximum Depth of Binary Tree",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-10"
+ },
+ "59": {
+  "title": "Remove Duplicates from Sorted List II",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-17"
+ },
+ "58": {
+  "title": "Remove Nth Node From End of List",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-06"
+ },
+ "57": {
+  "title": "Reverse Linked List II",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-08"
+ },
+ "56": {
+  "title": "Copy List with Random Pointer",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-12"
+ },
+ "55": {
+  "title": "Merge Two Sorted Lists",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-07"
+ },
+ "54": {
+  "title": "Add Two Numbers",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-10"
+ },
+ "53": {
+  "title": "Linked List Cycle",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-15"
+ },
+ "52": {
+  "title": "Evaluate Reverse Polish Notation",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-02"
+ },
+ "51": {
+  "title": "Min Stack",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-13"
+ },
+ "50": {
+  "title": "Simplify Path",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-04"
+ },
+ "49": {
+  "title": "Valid Parentheses",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-16"
+ },
+ "48": {
+  "title": "Longest Consecutive Sequence",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-01"
+ },
+ "47": {
+  "title": "Contains Duplicate II",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-17"
+ },
+ "46": {
+  "title": "Happy Number",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-12"
+ },
+ "45": {
+  "title": "Two Sum",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-05"
+ },
+ "44": {
+  "title": "Group Anagrams",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-04"
+ },
+ "43": {
+  "title": "Valid Anagram",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-04"
+ },
+ "42": {
+  "title": "Word Pattern",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-11"
+ },
+ "41": {
+  "title": "Isomorphic Strings",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-13"
+ },
+ "40": {
+  "title": "Ransom Note",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-15"
+ },
+ "39": {
+  "title": "Longest Substring Without Repeating Characters",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-06"
+ },
+ "38": {
+  "title": "Minimum Size Subarray Sum",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-05"
+ },
+ "37": {
+  "title": "3Sum",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-03"
+ },
+ "36": {
+  "title": "Container With Most Water",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-11"
+ },
+ "35": {
+  "title": "Two Sum II - Input Array Is Sorted",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-09-30"
+ },
+ "34": {
+  "title": "Is Subsequence",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-12"
+ },
+ "33": {
+  "title": "Valid Palindrome",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-02"
+ },
+ "32": {
+  "title": "Find the Index of the First Occurrence in a String",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-09-30"
+ },
+ "31": {
+  "title": "Reverse Words in a String",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-09"
+ },
+ "30": {
+  "title": "Longest Common Prefix",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-14"
+ },
+ "29": {
+  "title": "Length of Last Word",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-08"
+ },
+ "28": {
+  "title": "Roman to Integer",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-01"
+ },
+ "27": {
+  "title": "Product of Array Except Self",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-17"
+ },
+ "26": {
+  "title": "Jump Game II",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-16"
+ },
+ "25": {
+  "title": "Jump Game",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-08"
+ },
+ "24": {
+  "title": "Best Time to Buy and Sell Stock II",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-02"
+ },
+ "23": {
+  "title": "Best Time to Buy and Sell Stock",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-13"
+ },
+ "22": {
+  "title": "Rotate Array",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-15"
+ },
+ "21": {
+  "title": "Majority Element",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-16"
+ },
+ "20": {
+  "title": "Remove Duplicates from Sorted Array II",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-10"
+ },
+ "19": {
+  "title": "Remove Duplicates from Sorted Array",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-03"
+ },
+ "18": {
+  "title": "Remove Element",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-09"
+ },
+ "17": {
+  "title": "Merge Sorted Array",
+  "revision_interval_days": 14,
+  "next_revision_date": "2026-10-14"
+ }
+}
